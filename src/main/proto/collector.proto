@@ -47,4 +47,5 @@ message DataPoint {
         SELL = 1;
     }
     Type type = 4;
+    string market = 5;
 }

@@ -16,6 +16,22 @@ public class TradePoint {
     @Column(name = "market_buy")
     private Boolean market_buy;
 
+    public Instant getTime() {
+        return time;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public Double getVolume() {
+        return volume;
+    }
+
+    public Boolean getMarket_buy() {
+        return market_buy;
+    }
+
     @Override
     public String toString() {
         return "TradePoint{" +

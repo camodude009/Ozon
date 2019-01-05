@@ -94,7 +94,7 @@ class ServiceInstanceRestController {
     @Autowired
     private DiscoveryClient discoveryClient;
 
-    @RequestMapping("/service-instances/{applicationName}")
+    @RequestMapping(value = "/service-instances/{applicationName}")
     public String serviceInstancesByApplicationName(
             @PathVariable String applicationName) {
         List<String> serviceURIs = this.discoveryClient.getInstances(applicationName).stream()
@@ -102,4 +102,5 @@ class ServiceInstanceRestController {
                 .collect(Collectors.toList());
         return gson.toJson(serviceURIs);
     }
+
 }

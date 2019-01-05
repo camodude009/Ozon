@@ -3,18 +3,14 @@ package application;
 
 import com.google.gson.Gson;
 import io.influxdb.DBReader;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.influxdb.Summary;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableDiscoveryClient
@@ -36,15 +32,17 @@ class ServiceInstanceRestController {
     // database connection
     private DBReader db = new DBReader("http://127.0.0.1:8086", "root", "root");
 
-    @Autowired
-    private DiscoveryClient discoveryClient;
-
-    @RequestMapping("/service-instances/{applicationName}")
-    public String serviceInstancesByApplicationName(
-            @PathVariable String applicationName) {
-        List<String> serviceURIs = this.discoveryClient.getInstances(applicationName).stream()
-                .map(si -> si.getUri().toString())
-                .collect(Collectors.toList());
-        return gson.toJson(serviceURIs);
+    // summary request with optional 'from' and 'to' parameters
+    @RequestMapping(
+            value = "/summary/{market}",
+            method = RequestMethod.GET
+    )
+    public String summary(@PathVariable("market") String market,
+                          @RequestParam(name = "from", required = false) Optional<Long> from,
+                          @RequestParam(name = "to", required = false) Optional<Long> to
+    ) {
+        Summary result = db.summary(market, from.orElse(Long.MIN_VALUE), to.orElse(Long.MAX_VALUE));
+        return gson.toJson(result, Summary.class);
     }
+
 }

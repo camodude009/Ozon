@@ -81,6 +81,7 @@ public class BinanceDatasource extends Datasource {
                     .setAmount(q)
                     .setPrice(p)
                     .setTimestamp(T)
+                    .setMarket("binance-" + s)
                     .build();
         }
     }

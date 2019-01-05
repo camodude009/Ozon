@@ -31,6 +31,7 @@ public class DBWriter {
                 .addField("price", dp.getPrice())
                 .addField("volume", dp.getAmount())
                 .addField("market_buy", dp.getType() == DataPoint.Type.BUY)
+                .tag("market", dp.getMarket())
                 .build())
                 .forEach(bp::point);
 

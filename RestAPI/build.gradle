@@ -1,0 +1,49 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.5.RELEASE'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+    id "org.springframework.boot" version '2.0.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.6.RELEASE'
+}
+
+group 'com.camodude009'
+version '1.0'
+
+sourceCompatibility = 1.8
+
+
+bootJar {
+    baseName = 'eureka-client'
+    version = '0.0.1-SNAPSHOT'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Finchley.SR2'
+    }
+}
+
+dependencies {
+    // eureka
+    compile 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
+    compile 'org.springframework.cloud:spring-cloud-netflix-eureka-server'
+    // adding dependencies that were removed in Java 9
+    compile 'javax.xml.bind:jaxb-api:2.2.11'
+    compile 'javax.activation:activation:1.1.1'
+    // InfluxDB
+    compile 'org.influxdb:influxdb-java:2.7'
+}

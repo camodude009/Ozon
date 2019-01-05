@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.grpc.DataClient;
 import io.grpc.collector.DataPoint;
-import io.influxdb.DBConnector;
+import io.influxdb.DBWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -35,15 +35,15 @@ public class Collector {
     private static Gson gson = new Gson();
 
     public static void main(String[] args) {
-        // start eureka application
+        // start spring application
         SpringApplication.run(Collector.class, args);
         // establish database connection
-        DBConnector db = new DBConnector("http://127.0.0.1:8086", "root", "root");
+        DBWriter db = new DBWriter("http://127.0.0.1:8086", "root", "root");
         while (true) {
             // iterate through registered datasources
             List<String> datasources = Collector.getDatasources();
             for (String uri : datasources) {
-                db.handleData(fetchData(uri));
+                db.write(fetchData(uri));
             }
             // sleep
             logger.info("Sleeping " + SLEEP_DURATION / 1000 + " seconds...");

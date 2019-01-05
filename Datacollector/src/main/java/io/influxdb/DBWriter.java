@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-public class DBConnector {
+public class DBWriter {
 
-    private static final Logger logger = Logger.getLogger(DBConnector.class.getName());
+    private static final Logger logger = Logger.getLogger(DBWriter.class.getName());
     private InfluxDB influxDB;
 
-    public DBConnector(String url, String user, String pass) {
+    public DBWriter(String url, String user, String pass) {
         influxDB = InfluxDBFactory.connect(url, user, pass);
         if (!influxDB.databaseExists("prod")) {
             logger.info("Creating database \"prod\"...");
@@ -23,7 +23,7 @@ public class DBConnector {
         }
     }
 
-    public void handleData(List<DataPoint> dataPoints) {
+    public void write(List<DataPoint> dataPoints) {
         BatchPoints bp = BatchPoints.database("prod").build();
 
         dataPoints.stream().map(dp -> Point.measurement("trades")

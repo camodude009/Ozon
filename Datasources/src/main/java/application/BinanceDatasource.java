@@ -19,10 +19,13 @@ public class BinanceDatasource extends Datasource {
     private static Gson gson = new Gson();
 
     public static void main(String[] args) {
+        // start spring application
         SpringApplication.run(BinanceDatasource.class, args);
+        // create datasource and grpc server
         Datasource ds = new BinanceDatasource();
         DataServer s = new DataServer(ds);
         try {
+            // start datasource and grpc server
             new Thread(ds).start();
             s.start();
         } catch (IOException e) {
@@ -37,14 +40,20 @@ public class BinanceDatasource extends Datasource {
 
     @Override
     public void run() {
+        // url to collect data from
         String url = "wss://stream.binance.com:9443/ws/btcusdt@trade";
         URI serverURI = URI.create(url);
+        // message handler
         SimpleWebSocket ws = new SimpleWebSocket(serverURI, message -> {
             Trade t = gson.fromJson(message, Trade.class);
             this.addData(t.toDataPoint());
         });
         try {
-            ws.setSocket(SSLSocketFactory.getDefault().createSocket(serverURI.getHost(), serverURI.getPort()));
+            // create connection and connect
+            ws.setSocket(SSLSocketFactory
+                    .getDefault()
+                    .createSocket(serverURI.getHost(), serverURI.getPort())
+            );
             ws.connect();
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error creating websocket", e);
@@ -52,6 +61,7 @@ public class BinanceDatasource extends Datasource {
 
     }
 
+    // a trades object as defined by the binance API
     private class Trade {
         String e; // Event type
         long E; // Event time

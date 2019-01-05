@@ -16,7 +16,7 @@
 
 package io.grpc;
 
-import collectors.Collector;
+import io.grpc.collector.CollectorGrpc;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -28,16 +28,15 @@ public class DataServer {
     private static final Logger logger = Logger.getLogger(DataServer.class.getName());
 
     private Server server;
-    private Collector collector;
+    private CollectorGrpc.CollectorImplBase service;
 
-    public DataServer(Collector collector) {
-        this.collector = collector;
-        new Thread(collector).start();
+    public DataServer(CollectorGrpc.CollectorImplBase service) {
+        this.service = service;
     }
 
     public void start() throws IOException {
         server = ServerBuilder.forPort(50051)
-                .addService(collector)
+                .addService(service)
                 .build()
                 .start();
         logger.info("Server started, listening on 50051");

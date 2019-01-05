@@ -20,7 +20,7 @@ option objc_class_prefix = "HLW";
 
 package collectors;
 
-// The collector service definition.
+// The collector application definition.
 service Collector {
     // requests data
     rpc FetchData (DataRequest) returns (DataResponse) {

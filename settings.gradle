@@ -1,2 +1,5 @@
 rootProject.name = 'Ozon'
+include 'Eureka-Service'
+include 'Datacollector'
+include 'Datasources'
 

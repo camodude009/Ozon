@@ -1,4 +1,4 @@
-package collectors;
+package application;
 
 import io.grpc.collector.CollectorGrpc;
 import io.grpc.collector.DataPoint;
@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public abstract class Collector extends CollectorGrpc.CollectorImplBase implements Runnable {
+public abstract class Datasource extends CollectorGrpc.CollectorImplBase implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(BinanceCollector.class.getName());
+    private static final Logger logger = Logger.getLogger(Datasource.class.getName());
     private List<DataPoint> data;
 
-    protected Collector() {
+    protected Datasource() {
         data = new ArrayList<>(1000);
     }
 

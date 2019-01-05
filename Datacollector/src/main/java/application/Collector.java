@@ -1,30 +1,51 @@
 package application;
 
 
-import io.eureka.DatasourceDiscoveryClient;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.grpc.DataClient;
 import io.grpc.collector.DataPoint;
 import io.influxdb.DBConnector;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+@SpringBootApplication
+@EnableDiscoveryClient
 public class Collector {
 
     private static final Logger logger = Logger.getLogger(Collector.class.getName());
     private static final long SLEEP_DURATION = 10 * 1000;
+    private static Gson gson = new Gson();
 
     public static void main(String[] args) {
         // start eureka application
-        SpringApplication.run(DatasourceDiscoveryClient.class, args);
+        SpringApplication.run(Collector.class, args);
         // establish database connection
         DBConnector db = new DBConnector("http://127.0.0.1:8086", "root", "root");
         while (true) {
+            // iterate through registered datasources
+            List<String> datasources = Collector.getDatasources();
+            for (String uri : datasources) {
+                db.handleData(fetchData(uri));
+            }
+            // sleep
             logger.info("Sleeping " + SLEEP_DURATION / 1000 + " seconds...");
             try {
                 Thread.sleep(SLEEP_DURATION);
@@ -32,27 +53,53 @@ public class Collector {
                 logger.log(Level.WARNING, "Interrupted while waiting for next cycle", e);
             }
 
-            // iterate through registered datasources
-            List<String> datasources = new LinkedList<>();
-            try {
-                datasources = DatasourceDiscoveryClient.getDatasources();
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to fetch datasources", e);
-            }
-            for (String uri : datasources) {
-                String host = URI.create(uri).getHost();
-                logger.info("Fetching data from " + host + ":50051");
-                DataClient c = new DataClient(host, 50051);
-                List<DataPoint> newData = c.fetchData();
-                logger.info("Received " + newData.size() + " data points");
-                db.handleData(newData);
-                try {
-                    c.shutdown();
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Interrupted connection to " + host + ":50051", e);
-                }
-            }
-
         }
+    }
+
+    private static List<DataPoint> fetchData(String uri) {
+        String host = URI.create(uri).getHost();
+        logger.info("Fetching data from " + host + ":50051");
+        DataClient c = new DataClient(host, 50051);
+        List<DataPoint> newData = c.fetchData();
+        logger.info("Received " + newData.size() + " data points");
+        try {
+            c.shutdown();
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted connection to " + host + ":50051", e);
+        }
+        return newData;
+    }
+
+    private static List<String> getDatasources() {
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.exchange(
+                "http://localhost:8081/service-instances/datasource/",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<String>() {
+                });
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            logger.log(Level.WARNING, "Unable to fetchData datasources");
+            return new LinkedList<>();
+        }
+        return gson.fromJson(response.getBody(), new TypeToken<List<String>>() {
+        }.getType());
+    }
+}
+
+@RestController
+class ServiceInstanceRestController {
+    private static Gson gson = new Gson();
+
+    @Autowired
+    private DiscoveryClient discoveryClient;
+
+    @RequestMapping("/service-instances/{applicationName}")
+    public String serviceInstancesByApplicationName(
+            @PathVariable String applicationName) {
+        List<String> serviceURIs = this.discoveryClient.getInstances(applicationName).stream()
+                .map(si -> si.getUri().toString())
+                .collect(Collectors.toList());
+        return gson.toJson(serviceURIs);
     }
 }

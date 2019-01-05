@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Distributed Systems Project</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+  <script src="script.js"></script>
+
+  <div id="parameters">
+    <p>You can specify the market and optionally the time range. If no market is specified a default
+   one will be used</p>
+    <form>
+        Market:<br>
+        <input id="mkt" type="text"><br>
+      From:<br>
+      <input id="from" type="text"><br>
+      To:<br>
+      <input id="to" type="text"><br><br>
+    </form>
+  </div>
+
+  <div id="buttons">
+    <input type="button" value="Summary" onclick="summary()">
+    <input type="button" value="Raw" onclick="raw()">
+  </div>
+
+
+</body>
+
+</html>

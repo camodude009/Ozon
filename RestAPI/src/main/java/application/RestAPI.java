@@ -36,6 +36,7 @@ class ServiceInstanceRestController {
     private DBReader db = new DBReader("http://127.0.0.1:8086", "root", "root");
 
     // summary request with optional 'from' and 'to' parameters
+    @CrossOrigin
     @RequestMapping(
             value = "/summary/{market}",
             method = RequestMethod.GET,
@@ -52,6 +53,7 @@ class ServiceInstanceRestController {
     }
 
     // summary request with optional 'from' and 'to' parameters
+    @CrossOrigin
     @RequestMapping(
             value = "/raw/{market}",
             method = RequestMethod.GET,

@@ -6,12 +6,18 @@ import io.grpc.collector.DataPoint;
 import io.websockets.SimpleWebSocket;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 public class BinanceDatasource extends Datasource {
@@ -40,49 +46,74 @@ public class BinanceDatasource extends Datasource {
 
     @Override
     public void run() {
-        // url to collect data from
-        String url = "wss://stream.binance.com:9443/ws/btcusdt@trade";
-        URI serverURI = URI.create(url);
+
+        logger.info("Fetching markets");
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.exchange(
+                "https://api.binance.com/api/v1/exchangeInfo",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<String>() {
+                });
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            logger.log(Level.SEVERE, "Unable to reach markets");
+            return;
+        }
+
+        // creating stream url
+        String url = "wss://stream.binance.com:9443/stream?streams=";
+        String markets = Arrays.stream(gson.fromJson(response.getBody(), ExchangeInfo.class)
+                .symbols).map(s -> s.symbol.toLowerCase() + "@trade")
+                .collect(Collectors.joining("/"));
+        URI serverURI = URI.create(url + markets);
+
         // message handler
         SimpleWebSocket ws = new SimpleWebSocket(serverURI, message -> {
-            Trade t = gson.fromJson(message, Trade.class);
-            this.addData(t.toDataPoint());
+            StreamEvent e = gson.fromJson(message, StreamEvent.class);
+            this.addData(e.data.toDataPoint());
         });
+        // create connection and connect
         try {
-            // create connection and connect
             ws.setSocket(SSLSocketFactory
                     .getDefault()
                     .createSocket(serverURI.getHost(), serverURI.getPort())
             );
             ws.connect();
-        } catch (IOException e) {
+        } catch (
+                IOException e) {
             logger.log(Level.WARNING, "Error creating websocket", e);
         }
 
     }
 
-    // a trades object as defined by the binance API
-    private class Trade {
-        String e; // Event type
-        long E; // Event time
-        String s; // Symbol
-        int t; // Trade ID
-        String p; // Price
-        String q; // Quantity
-        String b; // Buyer order ID
-        String a; // Seller order ID
-        long T; // Trade time
-        boolean m; // Is the buyer the market maker?
-        String M; // Ignore
+    // a stream event object as defined by the binance API
+    private class StreamEvent {
+        Trade data;
 
-        public DataPoint toDataPoint() {
-            return DataPoint.newBuilder()
-                    .setType(m ? DataPoint.Type.BUY : DataPoint.Type.SELL)
-                    .setAmount(q)
-                    .setPrice(p)
-                    .setTimestamp(T)
-                    .setMarket("binance-" + s)
-                    .build();
+        private class Trade {
+            String s; // Symbol
+            Double p; // Price
+            Double q; // Quantity
+            long T; // Trade time
+            boolean m; // Is the buyer the market maker?
+
+            public DataPoint toDataPoint() {
+                return DataPoint.newBuilder()
+                        .setType(m ? DataPoint.Type.BUY : DataPoint.Type.SELL)
+                        .setAmount(q)
+                        .setPrice(p)
+                        .setTimestamp(T)
+                        .setMarket("binance-" + s)
+                        .build();
+            }
+        }
+    }
+
+    private class ExchangeInfo {
+        Symbol[] symbols;
+
+        private class Symbol {
+            String symbol;
         }
     }
 }

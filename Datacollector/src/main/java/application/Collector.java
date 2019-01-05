@@ -94,7 +94,10 @@ class ServiceInstanceRestController {
     @Autowired
     private DiscoveryClient discoveryClient;
 
-    @RequestMapping(value = "/service-instances/{applicationName}")
+    @RequestMapping(
+            value = "/service-instances/{applicationName}",
+            produces = "application/json"
+    )
     public String serviceInstancesByApplicationName(
             @PathVariable String applicationName) {
         List<String> serviceURIs = this.discoveryClient.getInstances(applicationName).stream()

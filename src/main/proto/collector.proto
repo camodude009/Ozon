@@ -39,8 +39,8 @@ message DataResponse {
 
 // A single data point - a single trade on an exchange
 message DataPoint {
-    string price = 1;
-    string amount = 2;
+    double price = 1;
+    double amount = 2;
     int64 timestamp = 3;
     enum Type {
         BUY = 0;

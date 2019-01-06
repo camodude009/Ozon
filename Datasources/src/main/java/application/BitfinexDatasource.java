@@ -73,7 +73,7 @@ public class BitfinexDatasource extends Datasource {
                 }.getType());
                 if (l.size() == 6 && l.get(1).equals("te")) {
                     String market = "bitfinex-" + l.get(2).split("-")[1];
-                    Long time = Long.parseLong(l.get(3));
+                    Long time = Long.parseLong(l.get(3)) * 1000;
                     Double price = Double.parseDouble(l.get(4));
                     Double signedAmount = Double.parseDouble(l.get(5));
                     Double amount = Math.abs(signedAmount);

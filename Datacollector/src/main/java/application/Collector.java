@@ -43,7 +43,7 @@ public class Collector {
             // iterate through registered datasources
             List<String> datasources = Collector.getDatasources();
             for (String uri : datasources) {
-                db.write(fetchData(uri));
+                db.write(fetchData(URI.create(uri)));
             }
             // sleep
             logger.info("Sleeping " + SLEEP_DURATION / 1000 + " seconds...");
@@ -56,16 +56,18 @@ public class Collector {
         }
     }
 
-    private static List<DataPoint> fetchData(String uri) {
-        String host = URI.create(uri).getHost();
-        logger.info("Fetching data from " + host + ":50051");
-        DataClient c = new DataClient(host, 50051);
+    private static List<DataPoint> fetchData(URI uri) {
+        String host = uri.getHost();
+        int serviceNumber = uri.getPort() - 8081;
+        int port = 50050 + serviceNumber;
+        logger.info("Fetching data from " + host + "(SN: " + serviceNumber + "):" + port);
+        DataClient c = new DataClient(host, port);
         List<DataPoint> newData = c.fetchData();
         logger.info("Received " + newData.size() + " data points");
         try {
             c.shutdown();
         } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted connection to " + host + ":50051", e);
+            logger.log(Level.WARNING, "Interrupted connection to " + host + ":" + port, e);
         }
         return newData;
     }

@@ -29,17 +29,19 @@ public class DataServer {
 
     private Server server;
     private CollectorGrpc.CollectorImplBase service;
+    private int port;
 
-    public DataServer(CollectorGrpc.CollectorImplBase service) {
+    public DataServer(CollectorGrpc.CollectorImplBase service, int port) {
         this.service = service;
+        this.port = port;
     }
 
     public void start() throws IOException {
-        server = ServerBuilder.forPort(50051)
+        server = ServerBuilder.forPort(port)
                 .addService(service)
                 .build()
                 .start();
-        logger.info("Server started, listening on 50051");
+        logger.info("Server started, listening on port: " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

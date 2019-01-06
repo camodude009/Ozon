@@ -36,10 +36,8 @@ public abstract class Datasource extends CollectorGrpc.CollectorImplBase impleme
         return oldData;
     }
 
-    protected synchronized void addData(DataPoint... dataPoints) {
-        for (DataPoint dp : dataPoints) {
-            data.add(dp);
-        }
+    protected synchronized void addData(DataPoint dp) {
+        data.add(dp);
     }
 }
 

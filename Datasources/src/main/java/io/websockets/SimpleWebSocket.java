@@ -4,16 +4,12 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * An adapter class allowing the implementation of WebSocketClients only specifying onMessage().
  * Documentation: see {@link WebSocketClient}
  */
 public class SimpleWebSocket extends WebSocketClient {
-
-    private static final Logger logger = Logger.getLogger(SimpleWebSocket.class.getName());
 
     private SimpleWebSocketInterface web_socket_interface;
 
@@ -24,7 +20,7 @@ public class SimpleWebSocket extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake handshakedata) {
-        logger.info("Websocket opened: (" + handshakedata.getHttpStatus() + "," + handshakedata.getHttpStatusMessage() + ")");
+        web_socket_interface.onOpen(handshakedata);
     }
 
     @Override
@@ -34,12 +30,12 @@ public class SimpleWebSocket extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        logger.info("Websocket closed: (" + code + "," + reason + "," + remote + ")");
+        web_socket_interface.onClose(code, reason, remote);
     }
 
     @Override
     public void onError(Exception ex) {
-        logger.log(Level.WARNING, "Websocket error", ex);
+        web_socket_interface.onError(ex);
     }
 
 }

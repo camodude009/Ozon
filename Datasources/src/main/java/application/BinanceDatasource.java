@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import io.grpc.DataServer;
 import io.grpc.collector.DataPoint;
 import io.websockets.SimpleWebSocket;
+import io.websockets.SimpleWebSocketInterface;
+import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.ParameterizedTypeReference;
@@ -29,7 +31,7 @@ public class BinanceDatasource extends Datasource {
         SpringApplication.run(BinanceDatasource.class, args);
         // create datasource and grpc server
         Datasource ds = new BinanceDatasource();
-        DataServer s = new DataServer(ds);
+        DataServer s = new DataServer(ds, 50051);
         try {
             // start datasource and grpc server
             new Thread(ds).start();
@@ -67,20 +69,15 @@ public class BinanceDatasource extends Datasource {
                 .collect(Collectors.joining("/"));
         URI serverURI = URI.create(url + markets);
 
-        // message handler
-        SimpleWebSocket ws = new SimpleWebSocket(serverURI, message -> {
-            StreamEvent e = gson.fromJson(message, StreamEvent.class);
-            this.addData(e.data.toDataPoint());
-        });
         // create connection and connect
+        SimpleWebSocket ws = new SimpleWebSocket(serverURI, new BinanceWebSocketInterface());
         try {
             ws.setSocket(SSLSocketFactory
                     .getDefault()
                     .createSocket(serverURI.getHost(), serverURI.getPort())
             );
             ws.connect();
-        } catch (
-                IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Error creating websocket", e);
         }
 
@@ -106,6 +103,29 @@ public class BinanceDatasource extends Datasource {
                         .setMarket("binance-" + s)
                         .build();
             }
+        }
+    }
+
+    private class BinanceWebSocketInterface implements SimpleWebSocketInterface {
+        @Override
+        public void onMessage(String message) {
+            StreamEvent e = gson.fromJson(message, StreamEvent.class);
+            BinanceDatasource.this.addData(e.data.toDataPoint());
+        }
+
+        @Override
+        public void onOpen(ServerHandshake handshakedata) {
+            logger.info("Connected");
+        }
+
+        @Override
+        public void onClose(int code, String reason, boolean remote) {
+            logger.log(Level.WARNING, "Connection closed: " + code + "," + reason + "," + remote);
+        }
+
+        @Override
+        public void onError(Exception ex) {
+            logger.log(Level.WARNING, "Socket exception", ex);
         }
     }
 

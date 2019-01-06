@@ -1,33 +1,55 @@
 <!doctype html>
 <html>
+<html lang="en">
 
 <head>
   <title>Distributed Systems Project</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <!-- jQuery library -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- Latest compiled JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
 </head>
 
 <body>
-  <script src="script.js"></script>
-
-  <div id="parameters">
-    <p>You can specify the market and optionally the time range. If no market is specified a default
-   one will be used</p>
-    <form>
+  
+  <div class="container">
+      <script src="script.js"></script>
+    <div id="parameters">
+      <h1>You can specify the market and optionally the time range.</h1>
+      <form id="options">
         Market:<br>
-        <input id="mkt" type="text"><br>
-      From:<br>
-      <input id="from" type="text"><br>
-      To:<br>
-      <input id="to" type="text"><br><br>
-    </form>
-  </div>
+      </form>
+      <br>
+      <form class="form-inline">
+        <div class="form-group">
+          From
+          <input type="text" class="form-control" id="from">
+        </div>
+        <div class="form-group">
+          To
+          <input type="text" class="form-control" id="to">
+        </div>
+      </form>
 
-  <div id="buttons">
-    <input type="button" value="Summary" onclick="summary()">
-    <input type="button" value="Raw" onclick="raw()">
-  </div>
+    </div>
+    <br>
+    <div id="buttons">
+      <input type="button" class = "btn btn-info" value="Summary" onclick="summary()">
+      <input type="button" class = "btn btn-info" value="Raw" onclick="raw()">
+    </div>
+    <p id="status"></p>
+    <div id="bob">
+      <textarea id="rawresults" rows="4" cols="130">
 
+      </textarea>
+
+    </div>
+  </div>
 
 </body>
 

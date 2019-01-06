@@ -1,6 +1,7 @@
 package application;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import io.grpc.DataServer;
 import io.grpc.collector.DataPoint;
@@ -67,9 +68,9 @@ public class BitfinexDatasource extends Datasource {
 
         @Override
         public void onMessage(String message) {
-            List<String> l = gson.fromJson(message, new TypeToken<List<String>>() {
-            }.getType());
             try {
+                List<String> l = gson.fromJson(message, new TypeToken<List<String>>() {
+                }.getType());
                 if (l.size() == 6 && l.get(1).equals("te")) {
                     String market = "bitfinex-" + l.get(2).split("-")[1];
                     Long time = Long.parseLong(l.get(3));
@@ -86,8 +87,8 @@ public class BitfinexDatasource extends Datasource {
                             .build();
                     BitfinexDatasource.this.addData(dp);
                 }
-            } catch (NumberFormatException | NullPointerException e) {
-                logger.log(Level.WARNING, "Error parsing message: " + message, e);
+            } catch (NumberFormatException | NullPointerException | JsonSyntaxException e) {
+                logger.log(Level.WARNING, "Unknown message type: " + message);
             }
         }
 

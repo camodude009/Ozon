@@ -7,7 +7,9 @@ import org.influxdb.dto.QueryResult;
 import org.influxdb.impl.InfluxDBResultMapper;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class DBReader {
 
@@ -22,7 +24,7 @@ public class DBReader {
         }
     }
 
-    public Summary summary(String market, Long from, Long to) {
+    public Summary summary(String market, Optional<Long> from, Optional<Long> to) {
         List<TradePoint> tpList = raw(market, from, to);
 
         double max = tpList.stream()
@@ -40,15 +42,23 @@ public class DBReader {
         return new Summary(max, min, volume, tpList.size());
     }
 
-    public List<TradePoint> raw(String market, long from, long to) {
-        String queryString =
-                "select * from trades where market = \'" + market + "\'" +
-                        " and time >= " + from + " and time <= " + to;
-        System.out.println(queryString);
+    public List<TradePoint> raw(String market, Optional<Long> from, Optional<Long> to) {
+        String queryString = "select * from trades where market = \'" + market + "\'" +
+                (from.isPresent() ? (" and time >= " + from.get() * 1000000) : "") +
+                (to.isPresent() ? (" and time <= " + to.get() * 1000000) : "");
         QueryResult r = influxDB.query(new Query(queryString, "prod"));
         InfluxDBResultMapper resultMapper = new InfluxDBResultMapper();
 
         return resultMapper.toPOJO(r, TradePoint.class);
+    }
+
+    public List<String> markets() {
+        String queryString = "show tag values from trades with key = market";
+        QueryResult r = influxDB.query(new Query(queryString, "prod"));
+        InfluxDBResultMapper resultMapper = new InfluxDBResultMapper();
+        return resultMapper.toPOJO(r, TagPoint.class).stream()
+                .map(TagPoint::getValue)
+                .collect(Collectors.toList());
     }
 }
 

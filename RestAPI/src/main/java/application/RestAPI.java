@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableDiscoveryClient
@@ -46,9 +47,7 @@ class ServiceInstanceRestController {
                           @RequestParam(name = "from", required = false) Optional<Long> from,
                           @RequestParam(name = "to", required = false) Optional<Long> to
     ) {
-        long f = from.orElse(0l) * 1000000;
-        long t = to.isPresent() ? to.get() * 1000000 : Long.MAX_VALUE;
-        Summary result = db.summary(market, f, t);
+        Summary result = db.summary(market, from, to);
         return gson.toJson(result, Summary.class);
     }
 
@@ -63,11 +62,39 @@ class ServiceInstanceRestController {
                       @RequestParam(name = "from", required = false) Optional<Long> from,
                       @RequestParam(name = "to", required = false) Optional<Long> to
     ) {
-        long f = from.orElse(0l) * 1000000;
-        long t = to.isPresent() ? to.get() * 1000000 : Long.MAX_VALUE;
-        List<TradePoint> result = db.raw(market, f, t);
-        return gson.toJson(result, new TypeToken<List<TradePoint>>() {
+        List<Trade> result = db.raw(market, from, to).stream()
+                .map(Trade::new)
+                .collect(Collectors.toList());
+        return gson.toJson(result, new TypeToken<List<Trade>>() {
         }.getType());
+    }
+
+    // market request
+    @CrossOrigin
+    @RequestMapping(
+            value = "/markets",
+            method = RequestMethod.GET,
+            produces = "application/json"
+    )
+    public String markets() {
+        List<String> result = db.markets();
+        return gson.toJson(result, new TypeToken<List<Trade>>() {
+        }.getType());
+    }
+
+    private class Trade {
+        double price, volume;
+        boolean market_buy;
+        String market;
+        long time;
+
+        public Trade(TradePoint p) {
+            price = p.getPrice();
+            volume = p.getVolume();
+            market = p.getMarket();
+            market_buy = p.getMarket_buy();
+            time = p.getTime().toEpochMilli();
+        }
     }
 
 }

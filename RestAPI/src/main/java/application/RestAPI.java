@@ -4,7 +4,7 @@ package application;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.influxdb.DBReader;
-import io.influxdb.Summary;
+import io.influxdb.SummaryPoint;
 import io.influxdb.TradePoint;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -47,8 +47,8 @@ class ServiceInstanceRestController {
                           @RequestParam(name = "from", required = false) Optional<Long> from,
                           @RequestParam(name = "to", required = false) Optional<Long> to
     ) {
-        Summary result = db.summary(market, from, to);
-        return gson.toJson(result, Summary.class);
+        SummaryPoint result = db.summary(market, from, to);
+        return gson.toJson(result, SummaryPoint.class);
     }
 
     // summary request with optional 'from' and 'to' parameters

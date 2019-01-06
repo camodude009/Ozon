@@ -24,22 +24,16 @@ public class DBReader {
         }
     }
 
-    public Summary summary(String market, Optional<Long> from, Optional<Long> to) {
-        List<TradePoint> tpList = raw(market, from, to);
+    public SummaryPoint summary(String market, Optional<Long> from, Optional<Long> to) {
+        String queryString = "select count(market_buy), max(price), min(price), sum(volume) " +
+                "from trades " +
+                "where market = \'" + market + "\'" +
+                (from.isPresent() ? (" and time >= " + from.get() * 1000000) : "") +
+                (to.isPresent() ? (" and time <= " + to.get() * 1000000) : "");
+        QueryResult r = influxDB.query(new Query(queryString, "prod"));
+        InfluxDBResultMapper resultMapper = new InfluxDBResultMapper();
 
-        double max = tpList.stream()
-                .map(TradePoint::getPrice)
-                .reduce(Double::max)
-                .orElse(-1.0);
-        double min = tpList.stream()
-                .map(TradePoint::getPrice)
-                .reduce(Double::min)
-                .orElse(-1.0);
-        double volume = tpList.stream()
-                .map(TradePoint::getVolume)
-                .reduce(Double::sum)
-                .orElse(0.0);
-        return new Summary(max, min, volume, tpList.size());
+        return resultMapper.toPOJO(r, SummaryPoint.class).get(0);
     }
 
     public List<TradePoint> raw(String market, Optional<Long> from, Optional<Long> to) {

@@ -58,6 +58,7 @@ function summary() {
     var data = JSON.stringify(JSON.parse(this.response));
     var element = document.getElementById("rawresults");
     element.value = data;
+    document.getElementById('status').innerHTML = "";
   }
 
 
@@ -96,13 +97,14 @@ function raw() {
     // Begin accessing JSON data here
     var data = JSON.parse(this.response);
     var para = "";
-    data.forEach(movie => {
-      para += "Market: " + movie.market + " Market_Buy: " + movie.market_buy + " Price: " + movie.price + " Volume: " + movie.volume + " Time: " + JSON.stringify(movie.time) + "\n";
+    data.forEach(element => {
+      para += "Market:" + element.market + " Market_Buy:" + element.market_buy + " Price:" + element.price + " Volume:" + element.volume + " Time:" + JSON.stringify(element.time) + "\n";
 
       //console.log(movie);
     });
     var element = document.getElementById("rawresults");
     element.value = para;
+    document.getElementById('status').innerHTML = "";
   }
 
 

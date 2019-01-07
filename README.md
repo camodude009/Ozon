@@ -12,4 +12,4 @@ Running the Application:
 1) Run InfluxDB on Command Line.
 2) Run the Eureka Service.
 3) Run all the other services in any order.
-4) Open the Website Frontend.html to view file.
+4) Open the website Frontend.html to view file.

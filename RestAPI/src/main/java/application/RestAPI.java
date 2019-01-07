@@ -2,7 +2,6 @@ package application;
 
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.influxdb.DBReader;
 import io.influxdb.SummaryPoint;
 import io.influxdb.TradePoint;
@@ -13,30 +12,41 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * A {@link SpringBootApplication} that exposes a Rest API for querying InfluxDB.
+ */
 @SpringBootApplication
 @EnableDiscoveryClient
 public class RestAPI {
-
-    private static final Logger logger = Logger.getLogger(RestAPI.class.getName());
-    private static final long SLEEP_DURATION = 10 * 1000;
-    private static Gson gson = new Gson();
-
     public static void main(String[] args) {
         // start spring application
         SpringApplication.run(RestAPI.class, args);
     }
 }
 
+/**
+ * Exposed rest service for querying InfluxDB.
+ */
 @RestController
 class ServiceInstanceRestController {
+
     private static Gson gson = new Gson();
-    // database connection
+
+    /**
+     * Database connection.
+     */
     private DBReader db = new DBReader("http://127.0.0.1:8086", "root", "root");
 
-    // summary request with optional 'from' and 'to' parameters
+    /**
+     * Request for a summary of a certain market (and time period).
+     *
+     * @param market market to be queried
+     * @param from   timestamp (ms) - optional
+     * @param to     timestamp (ms) - optional
+     * @return JSONObject mapping of a {@link SummaryPoint}
+     */
     @CrossOrigin
     @RequestMapping(
             value = "/summary/{market}",
@@ -47,11 +57,19 @@ class ServiceInstanceRestController {
                           @RequestParam(name = "from", required = false) Optional<Long> from,
                           @RequestParam(name = "to", required = false) Optional<Long> to
     ) {
+        // query DB and return mapped result
         SummaryPoint result = db.summary(market, from, to);
-        return gson.toJson(result, SummaryPoint.class);
+        return gson.toJson(result);
     }
 
-    // summary request with optional 'from' and 'to' parameters
+    /**
+     * Request for a raw data of a certain market (and time period).
+     *
+     * @param market market to be queried
+     * @param from   timestamp (ms) - optional
+     * @param to     timestamp (ms) - optional
+     * @return JSONArray of mapping of {@link Trade}
+     */
     @CrossOrigin
     @RequestMapping(
             value = "/raw/{market}",
@@ -62,14 +80,19 @@ class ServiceInstanceRestController {
                       @RequestParam(name = "from", required = false) Optional<Long> from,
                       @RequestParam(name = "to", required = false) Optional<Long> to
     ) {
-        List<Trade> result = db.raw(market, from, to).stream()
-                .map(Trade::new)
-                .collect(Collectors.toList());
-        return gson.toJson(result, new TypeToken<List<Trade>>() {
-        }.getType());
+        // query database and return mapped result
+        List<TradePoint> result = db.raw(market, from, to);
+        return gson.toJson(result.stream()
+                .map(TradePoint::toTrade)
+                .collect(Collectors.toList())
+        );
     }
 
-    // market request
+    /**
+     * Request for list of available markets.
+     *
+     * @return JSONArray of market names
+     */
     @CrossOrigin
     @RequestMapping(
             value = "/markets",
@@ -78,23 +101,7 @@ class ServiceInstanceRestController {
     )
     public String markets() {
         List<String> result = db.markets();
-        return gson.toJson(result, new TypeToken<List<Trade>>() {
-        }.getType());
-    }
-
-    private class Trade {
-        double price, volume;
-        boolean market_buy;
-        String market;
-        long time;
-
-        public Trade(TradePoint p) {
-            price = p.getPrice();
-            volume = p.getVolume();
-            market = p.getMarket();
-            market_buy = p.getMarket_buy();
-            time = p.getTime().toEpochMilli();
-        }
+        return gson.toJson(result);
     }
 
 }

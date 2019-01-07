@@ -5,6 +5,9 @@ import org.influxdb.annotation.Measurement;
 
 import java.time.Instant;
 
+/**
+ * Mapping of {@link DBReader}'s 'raw' query result.
+ */
 @Measurement(name = "trades")
 public class TradePoint {
     @Column(name = "time")
@@ -18,33 +21,22 @@ public class TradePoint {
     @Column(name = "market", tag = true)
     private String market;
 
-    public Instant getTime() {
-        return time;
+    public Trade toTrade() {
+        return new Trade(this);
     }
 
-    public Double getPrice() {
-        return price;
-    }
+    public class Trade {
+        double price, volume;
+        boolean market_buy;
+        String market;
+        long time;
 
-    public Double getVolume() {
-        return volume;
-    }
-
-    public Boolean getMarket_buy() {
-        return market_buy;
-    }
-
-    public String getMarket() {
-        return market;
-    }
-
-    @Override
-    public String toString() {
-        return "TradePoint{" +
-                "time=" + time +
-                ", price=" + price +
-                ", volume=" + volume +
-                ", market_buy=" + market_buy +
-                '}';
+        public Trade(TradePoint p) {
+            price = p.price;
+            volume = p.volume;
+            market = p.market;
+            market_buy = p.market_buy;
+            time = p.time.toEpochMilli();
+        }
     }
 }

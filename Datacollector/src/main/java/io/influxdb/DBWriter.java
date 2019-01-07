@@ -15,9 +15,7 @@ import java.util.logging.Logger;
  */
 public class DBWriter {
 
-    // logger
     private static final Logger logger = Logger.getLogger(DBWriter.class.getName());
-    // internal DB object
     private InfluxDB influxDB;
 
     /**

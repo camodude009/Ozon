@@ -3,6 +3,9 @@ package io.influxdb;
 import org.influxdb.annotation.Column;
 import org.influxdb.annotation.Measurement;
 
+/**
+ * Mapping of {@link DBReader}'s 'summary' query result.
+ */
 @Measurement(name = "trades")
 public class SummaryPoint {
 

@@ -22,18 +22,27 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * {@link SpringBootApplication} implementing parts of the BitFinex API (v1).
+ *
+ * @see <a href="https://docs.bitfinex.com/v1/docs">https://docs.bitfinex.com/v1/docs</a>
+ */
 @SpringBootApplication
-public class BitfinexDatasource extends Datasource {
+public class BitFinexDatasource extends Datasource {
 
-    private static final Logger logger = Logger.getLogger(BitfinexDatasource.class.getName());
+    private static final Logger logger = Logger.getLogger(BitFinexDatasource.class.getName());
     private static Gson gson = new Gson();
+
+    /**
+     * Simple websocket needed for onOpen() calls in the {@link BitFinexWebSocketImpl}.
+     */
     private static SimpleWebSocket ws;
 
     public static void main(String[] args) {
         // start spring application
-        SpringApplication.run(BitfinexDatasource.class, args);
+        SpringApplication.run(BitFinexDatasource.class, args);
         // create datasource and grpc server
-        Datasource ds = new BitfinexDatasource();
+        Datasource ds = new BitFinexDatasource();
         DataServer s = new DataServer(ds, 50052);
         try {
             // start datasource and grpc server
@@ -51,11 +60,11 @@ public class BitfinexDatasource extends Datasource {
 
     @Override
     public void run() {
-        // endpoint
+        // url for websocket
         String url = "wss://api.bitfinex.com/ws/";
         URI serverURI = URI.create(url);
-        // create connection and connect
-        ws = new SimpleWebSocket(serverURI, new BitfinexWebSocketInterface());
+        // create connection and connect using the BitFinexWebSocketImpl to handle messages
+        ws = new SimpleWebSocket(serverURI, new BitFinexWebSocketImpl());
         try {
             ws.setSocket(SSLSocketFactory.getDefault().createSocket());
             ws.connect();
@@ -64,10 +73,12 @@ public class BitfinexDatasource extends Datasource {
         }
     }
 
-    private class BitfinexWebSocketInterface implements SimpleWebSocketInterface {
+    private class BitFinexWebSocketImpl implements SimpleWebSocketInterface {
 
         @Override
         public void onMessage(String message) {
+            // parse message and add DataPoint to internal data store
+            // example message: "[ 5, 'te', '1234-BTCUSD', 1443659698, 236.42, 0.49064538 ]"
             try {
                 List<String> l = gson.fromJson(message, new TypeToken<List<String>>() {
                 }.getType());
@@ -85,7 +96,7 @@ public class BitfinexDatasource extends Datasource {
                             .setAmount(amount)
                             .setType(type)
                             .build();
-                    BitfinexDatasource.this.addData(dp);
+                    BitFinexDatasource.this.addData(dp);
                 }
             } catch (NumberFormatException | NullPointerException | JsonSyntaxException e) {
                 logger.log(Level.WARNING, "Unknown message type: " + message);
@@ -94,6 +105,7 @@ public class BitfinexDatasource extends Datasource {
 
         @Override
         public void onOpen(ServerHandshake handshakedata) {
+            // fetch all possible markets using rest call to BitFinex' Rest API
             logger.info("Fetching markets");
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> response = restTemplate.exchange(
@@ -106,9 +118,9 @@ public class BitfinexDatasource extends Datasource {
                 logger.log(Level.SEVERE, "Unable to reach markets");
                 return;
             }
+            // subscribe to trade stream for each market
             List<String> markets = gson.fromJson(response.getBody(), new TypeToken<List<String>>() {
             }.getType());
-            System.out.println(markets.size());
             markets.forEach(i -> {
                 ws.send("{\"event\": \"subscribe\",\"channel\":\"trades\",\"pair\": \"" + i + "\"}");
             });

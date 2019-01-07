@@ -21,8 +21,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * {@link SpringBootApplication} implementing parts of the Binance API.
+ *
+ * @see <a href="https://github.com/binance-exchange/binance-official-api-docs">https://github.com/binance-exchange/binance-official-api-docs</a>
+ */
 @SpringBootApplication
 public class BinanceDatasource extends Datasource {
+
     private static final Logger logger = Logger.getLogger(BinanceDatasource.class.getName());
     private static Gson gson = new Gson();
 
@@ -48,7 +54,7 @@ public class BinanceDatasource extends Datasource {
 
     @Override
     public void run() {
-
+        // fetch all possible markets using rest call to Binance's Rest API
         logger.info("Fetching markets");
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.exchange(
@@ -62,15 +68,15 @@ public class BinanceDatasource extends Datasource {
             return;
         }
 
-        // creating stream url
+        // creating url for websocket
         String url = "wss://stream.binance.com:9443/stream?streams=";
         String markets = Arrays.stream(gson.fromJson(response.getBody(), ExchangeInfo.class)
                 .symbols).map(s -> s.symbol.toLowerCase() + "@trade")
                 .collect(Collectors.joining("/"));
         URI serverURI = URI.create(url + markets);
 
-        // create connection and connect
-        SimpleWebSocket ws = new SimpleWebSocket(serverURI, new BinanceWebSocketInterface());
+        // create connection and connect using the BinanceWebSocketImpl to handle messages
+        SimpleWebSocket ws = new SimpleWebSocket(serverURI, new BinanceWebSocketImpl());
         try {
             ws.setSocket(SSLSocketFactory
                     .getDefault()
@@ -83,7 +89,20 @@ public class BinanceDatasource extends Datasource {
 
     }
 
-    // a stream event object as defined by the binance API
+    /**
+     * The exchange info object as defined by the binance API.
+     */
+    private class ExchangeInfo {
+        Symbol[] symbols;
+
+        private class Symbol {
+            String symbol;
+        }
+    }
+
+    /**
+     * A stream event object as defined by the binance API.
+     */
     private class StreamEvent {
         Trade data;
 
@@ -106,9 +125,14 @@ public class BinanceDatasource extends Datasource {
         }
     }
 
-    private class BinanceWebSocketInterface implements SimpleWebSocketInterface {
+    /**
+     * An implementation of a {@link SimpleWebSocketInterface} for handling messages
+     * from the Binance API.
+     */
+    private class BinanceWebSocketImpl implements SimpleWebSocketInterface {
         @Override
         public void onMessage(String message) {
+            // parse message and add DataPoint to internal data store
             StreamEvent e = gson.fromJson(message, StreamEvent.class);
             BinanceDatasource.this.addData(e.data.toDataPoint());
         }
@@ -126,14 +150,6 @@ public class BinanceDatasource extends Datasource {
         @Override
         public void onError(Exception ex) {
             logger.log(Level.WARNING, "Socket exception", ex);
-        }
-    }
-
-    private class ExchangeInfo {
-        Symbol[] symbols;
-
-        private class Symbol {
-            String symbol;
         }
     }
 }

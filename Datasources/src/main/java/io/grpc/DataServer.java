@@ -22,37 +22,60 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * Server that manages startup/shutdown of a {@code data} RestletServer.
+ * Wrapper for implementation of a @{@link Server} using a
+ * {@link io.grpc.collector.CollectorGrpc.CollectorImplBase}.
  */
 public class DataServer {
     private static final Logger logger = Logger.getLogger(DataServer.class.getName());
 
+    /**
+     * gRCP {@link Server}.
+     */
     private Server server;
+    /**
+     * Implementation of {@link io.grpc.collector.CollectorGrpc.CollectorImplBase} gRPC service.
+     */
     private CollectorGrpc.CollectorImplBase service;
+    /**
+     * Port the gRPC {@link Server} runs on.
+     */
     private int port;
 
+    /**
+     * Constructs a {@link DataServer}, setting its service and port.
+     *
+     * @param service service to be run by this {@link DataServer}
+     * @param port    port this {@link DataServer} should run on
+     */
     public DataServer(CollectorGrpc.CollectorImplBase service, int port) {
         this.service = service;
         this.port = port;
     }
 
+    /**
+     * Starts up the gRPC {@link Server}.
+     *
+     * @throws IOException
+     */
     public void start() throws IOException {
+        // building and starting gRPC Server
         server = ServerBuilder.forPort(port)
                 .addService(service)
                 .build()
                 .start();
         logger.info("Server started, listening on port: " + port);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                System.err.println("Shutting down gRPC RestletServer since JVM is shutting down");
-                DataServer.this.stop();
-                System.err.println("Server shut down");
-            }
-        });
+        // adding shutdown hook to cleanly shut down server when the JVM gets shut down
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+            System.err.println("Shutting down gRPC server since JVM is shutting down");
+            DataServer.this.stop();
+            System.err.println("Server shut down");
+        }));
     }
 
+    /**
+     * Shuts down the gRPC {@link Server}.
+     */
     private void stop() {
         if (server != null) {
             server.shutdown();
@@ -60,7 +83,7 @@ public class DataServer {
     }
 
     /**
-     * Await termination on the main thread since the grpc library uses daemon threads.
+     * Await termination on the main thread since the gRPC library uses daemon threads.
      */
     public void blockUntilShutdown() throws InterruptedException {
         if (server != null) {

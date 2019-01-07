@@ -28,41 +28,42 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A simple RestletClient that requests data from the {@link DataServer}.
+ * A simple gRPC client that wraps a gRPC channel  .
  */
 public class DataClient {
 
     private static final Logger logger = Logger.getLogger(DataClient.class.getName());
-    private static int requestID = 0;
 
+    private static int requestID = 0;
     private final ManagedChannel channel;
     private final CollectorGrpc.CollectorBlockingStub blockingStub;
 
     /**
-     * Construct RestletClient connecting to data RestletServer at {@code host:port}.
+     * Creates a new gRPC channel & stub for a @{@link CollectorGrpc}.
+     *
+     * @param host ip of server
+     * @param port port of server
      */
     public DataClient(String host, int port) {
-        this(ManagedChannelBuilder.forAddress(host, port)
+        channel = ManagedChannelBuilder.forAddress(host, port)
                 // Channels are secure by default (via SSL/TLS).
                 // For the example we disable TLS to avoid needing certificates.
                 .usePlaintext()
-                .build());
-    }
-
-    /**
-     * Construct RestletClient for accessing data RestletServer using the existing channel.
-     */
-    DataClient(ManagedChannel channel) {
-        this.channel = channel;
+                .build();
         blockingStub = CollectorGrpc.newBlockingStub(channel);
     }
 
+    /**
+     * Shuts down the channel of the data client.
+     *
+     * @throws InterruptedException
+     */
     public void shutdown() throws InterruptedException {
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
     /**
-     * Request data from RestletServer.
+     * Makes gRPC call to datasource to fetch new data.
      */
     public List<DataPoint> fetchData() {
         int localRequestID = requestID++;

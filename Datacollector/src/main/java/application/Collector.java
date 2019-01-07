@@ -26,24 +26,39 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * A {@link SpringBootApplication} for collecting data from datasources and storing it in an InfluxDB database.
+ */
 @SpringBootApplication
 @EnableDiscoveryClient
 public class Collector {
 
-    private static final Logger logger = Logger.getLogger(Collector.class.getName());
+    /**
+     * The duration between rounds of data collections in ms.
+     */
     private static final long SLEEP_DURATION = 10 * 1000;
+
+    private static final Logger logger = Logger.getLogger(Collector.class.getName());
     private static Gson gson = new Gson();
 
+    /**
+     * Main method.
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         // start spring application
         SpringApplication.run(Collector.class, args);
         // establish database connection
         DBWriter db = new DBWriter("http://127.0.0.1:8086", "root", "root");
+
+        // main loop
         while (true) {
+            // fetch datasources registered on EUREKA
+            List<URI> datasources = Collector.getDatasources();
             // iterate through registered datasources
-            List<String> datasources = Collector.getDatasources();
-            for (String uri : datasources) {
-                db.write(fetchData(URI.create(uri)));
+            for (URI uri : datasources) {
+                db.write(fetchData(uri));
             }
             // sleep
             logger.info("Sleeping " + SLEEP_DURATION / 1000 + " seconds...");
@@ -56,6 +71,12 @@ public class Collector {
         }
     }
 
+    /**
+     * Fetches data from datasource using gRPC.
+     *
+     * @param uri uri of the datasource.
+     * @return List of {@link DataPoint}s recorded since last call to datasources
+     */
     private static List<DataPoint> fetchData(URI uri) {
         String host = uri.getHost();
         int serviceNumber = uri.getPort() - 8081;
@@ -72,7 +93,13 @@ public class Collector {
         return newData;
     }
 
-    private static List<String> getDatasources() {
+    /**
+     * Fetches registered datasources through a Rest call to its locally exposed Rest service.
+     *
+     * @return list of URIs
+     */
+    private static List<URI> getDatasources() {
+        // Rest call
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.exchange(
                 "http://localhost:8081/service-instances/datasource/",
@@ -80,28 +107,47 @@ public class Collector {
                 null,
                 new ParameterizedTypeReference<String>() {
                 });
+        // return empty list if HTTPGet is unsuccessful
         if (!response.getStatusCode().is2xxSuccessful()) {
             logger.log(Level.WARNING, "Unable to fetchData datasources");
             return new LinkedList<>();
         }
-        return gson.fromJson(response.getBody(), new TypeToken<List<String>>() {
+        // parse list of strings from response body
+        List<String> uriStrings = gson.fromJson(response.getBody(), new TypeToken<List<String>>() {
         }.getType());
+        // return the list mapped to URIs
+        return uriStrings.stream()
+                .map(URI::create)
+                .collect(Collectors.toList());
     }
 }
 
+/**
+ * Exposed rest service for querying the discovery client.
+ */
 @RestController
 class ServiceInstanceRestController {
-    private static Gson gson = new Gson();
 
+    private static Gson gson = new Gson();
+    /**
+     * The automatically instantiated {@link DiscoveryClient}
+     */
     @Autowired
     private DiscoveryClient discoveryClient;
 
+    /**
+     * {@link RequestMapping} for a call to /service-instances/{applicationName}
+     *
+     * @param applicationName name of service
+     * @return JSONArray of the {@link URI}s of instances registered as "applicationName" on EUREKA
+     */
     @RequestMapping(
             value = "/service-instances/{applicationName}",
             produces = "application/json"
     )
     public String serviceInstancesByApplicationName(
             @PathVariable String applicationName) {
+        // query discovery client and return the URIs of relevant ServiceInstances
         List<String> serviceURIs = this.discoveryClient.getInstances(applicationName).stream()
                 .map(si -> si.getUri().toString())
                 .collect(Collectors.toList());

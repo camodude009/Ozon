@@ -3,7 +3,9 @@
 
 Requirements for Application:
 
-1) Downloading and Setting up InfluxDB.
+1) Downloading and Setting up InfluxDB. 
+~ Useful link to help install InfluxDB 
+https://docs.influxdata.com/influxdb/v1.4/introduction/installation/
 
 
 

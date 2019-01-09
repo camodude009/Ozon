@@ -2,6 +2,7 @@ package io.websockets;
 
 import org.java_websocket.handshake.ServerHandshake;
 
+
 /**
  * An interface providing the functions required for creating a {@link org.java_websocket.client.WebSocketClient}.
  * Used by the {@link SimpleWebSocket}.

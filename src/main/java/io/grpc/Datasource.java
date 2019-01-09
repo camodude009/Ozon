@@ -1,4 +1,4 @@
-package application;
+package io.grpc;
 
 import io.grpc.collector.CollectorGrpc;
 import io.grpc.collector.DataPoint;
@@ -9,6 +9,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
 
 /**
  * An implementation of the gRPC service {@link io.grpc.collector.CollectorGrpc.CollectorImplBase}.

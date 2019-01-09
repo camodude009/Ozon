@@ -5,6 +5,7 @@ import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
 
+
 /**
  * An adapter class allowing the implementation of WebSocketClients through an Interface (@{@link SimpleWebSocketInterface}).
  * Documentation: see {@link WebSocketClient}

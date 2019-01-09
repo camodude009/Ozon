@@ -55,25 +55,10 @@ dependencies {
     compile 'io.grpc:grpc-stub:1.17.1'
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.5.1-1"
-    }
-    plugins {
-        grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.17.1'
-        }
-    }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc {}
-        }
-    }
-}
-
 sourceSets {
     main {
         java {
+            srcDirs '../src/main/java'
             srcDirs '../build/generated/source/proto/main/grpc'
             srcDirs '../build/generated/source/proto/main/java'
         }

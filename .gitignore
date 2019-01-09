@@ -66,6 +66,9 @@ fabric.properties
 .gradle
 /build/
 
+# Subprojects
+/*/build/
+
 # Ignore Gradle GUI config
 gradle-app.setting
 

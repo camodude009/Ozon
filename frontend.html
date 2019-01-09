@@ -13,54 +13,54 @@
   <!-- Latest compiled JavaScript -->
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
 </head>
 
 <body>
 
-  <div class="container">
-    <script src="script.js"></script>
-    <style>
-      body {
-        background: linear-gradient(#d0fcee 10%, #3cffff 70%);
-      }
-    </style>
-    <div id="parameters">
-      <h1 style="color:blue;" align="center">
+<div class="container">
+  <script src="script.js"></script>
+  <style>
+    body {
+      background: linear-gradient(#d0fcee 10%, #3cffff 70%);
+    }
+  </style>
+  <div id="parameters">
+    <h1 style="color:blue;" align="center">OZON</h1>
+    <h2 style="color:#588bff;" align="center"><font size="3">A distributed live-data storage system.</font></h2>
 
-        OZON</h1>
-      <h2
-              style="color:#588bff;" align="center"> <font size="3">A distributed live-data storage system.</font> </h2>
-
-      <h3>You can specify the market and optionally the time range.</h3>
-      <form id="options">
-        Market:<br>
-      </form>
-      <br>
-      <form class="form-inline">
-        <div class="form-group">
-          From
-          <input type="text" class="form-control" id="from">
-        </div>
-        <div class="form-group">
-          To
-          <input type="text" class="form-control" id="to">
-        </div>
-      </form>
-
-    </div>
+    <h3>You are able to specify the market and optionally the time range. If nothing is specified the time range will be
+      set to the last hour. The default interval is one minute.</h3>
+    <form id="options">Market:<br></form>
     <br>
-    <div id="buttons">
-      <input type="button" class="btn btn-info" value="Summary" onclick="summary()">
-      <input type="button" class="btn btn-info" value="Raw" onclick="raw()">
-    </div>
-    <p id="status"></p>
-    <div id="bob">
-      <textarea id="rawresults" rows="4" cols="130">
+    <form class="form-inline">
+      <div class="form-group">
+        From (unix time)
+        <input type="text" class="form-control" id="from">
+      </div>
+      <div class="form-group">
+        To (unix time)
+        <input type="text" class="form-control" id="to">
+      </div>
+      <div class="form-group">
+        Candle interval (min)
+        <input type="text" class="form-control" id="interval">
+      </div>
+    </form>
 
-      </textarea>
-
-    </div>
   </div>
+  <br>
+  <div id="buttons">
+    <input type="button" class="btn btn-info" value="Request data" onclick="requestData()">
+  </div>
+  <p id="status"></p>
+  <div id="bob">
+    <textarea id="rawresults" rows="4" cols="100"></textarea>
+
+  </div>
+  <div id="chart_div" style="width: 1100px; height: 500px;"></div>
+</div>
 
 </body>
 

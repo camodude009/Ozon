@@ -9,6 +9,7 @@ buildscript {
 
 plugins {
     id 'java'
+    id 'application'
     id 'idea'
     id "org.springframework.boot" version '2.0.5.RELEASE'
     id 'io.spring.dependency-management' version '1.0.6.RELEASE'
@@ -44,4 +45,18 @@ dependencies {
     // adding dependencies that were removed in Java 9
     compile 'javax.xml.bind:jaxb-api:2.2.11'
     compile 'javax.activation:activation:1.1.1'
+}
+
+startScripts.enabled = false
+
+task EurekaService(type: CreateStartScripts) {
+    mainClassName = 'application.EurekaService'
+    applicationName = 'Eureka-Service'
+    outputDir = new File(project.buildDir, 'tmp')
+    classpath = startScripts.classpath
+}
+
+applicationDistribution.into('bin') {
+    from(EurekaService)
+    fileMode = 0755
 }
